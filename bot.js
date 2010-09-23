@@ -1,6 +1,6 @@
 var DNode = require("dnode");
 var sys = require("sys");
-var handlers = require("mybot.js").handlers
+var handlers = require("./mybot").handlers
 
 function log(msg) {
   console.log((new Date()).toUTCString() + ": " + msg);
