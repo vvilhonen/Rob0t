@@ -1,23 +1,27 @@
 var irc = require("irc");
+var sys = require("sys");
 var DNode = require("dnode");
-var client = new irc.Client("localhost", "raimob0t", {
+var client = new irc.Client("localhost", "Suppo", {
   userName: "lol",
   realName: "Seppo Taalasmaa",
   showErrors: true,
-  channels:["#channel"]
+  channels:[]
 });
 
 DNode(function(rpcClient,conn) {
   var authenticated = false;
-  var addedListener = null;
+  var cleanups = [];
   this.auth = DNode.sync(function(secret) {
     if (secret == "mysecret")
       authenticated = true;
   });
   this.client = DNode.sync(function() { return client; });
-  this.addListener = authReq(function(f) {
-    addedListener = f;
+  client.addListener("error", function(err) { sys.puts("middleman:"+err) });
+  this.addListener = authReq(function(eventName, f) {
     client.addListener("message", f);
+    cleanups.push(function() {
+      client.removeListener("message", f);
+    });
   });
   this.send = authReq(function() {
     client.send.apply(client, arguments);
@@ -29,9 +33,9 @@ DNode(function(rpcClient,conn) {
     client.part(channel);
   });
   conn.addListener("end", function() {
-    if (addedListener != null) {
-      client.removeListener("message", addedListener);
-    }
+    for(ind in cleanups) {
+      cleanups[ind]();
+    }    
   });
   
   function authReq(f) {
